@@ -1,14 +1,25 @@
 using aggreYaMVC.Repo;
 using aggreYaMVC.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var configuration = builder.Configuration;
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<IAccountServices, AccountServices>();
 builder.Services.AddTransient<IAccountRepo, AccountRepo>();
 builder.Services.AddHttpClient<IAccountRepo, AccountRepo>();
 builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSession();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+{
+
+    options.LoginPath = "/Account/Login";
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -21,9 +32,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseSession();
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

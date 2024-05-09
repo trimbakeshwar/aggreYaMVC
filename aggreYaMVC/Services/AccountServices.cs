@@ -15,7 +15,7 @@ namespace aggreYaMVC.Services
         {
             return _accountRepo.EncryptPassword(password);
         }
-        public async Task<ResponseModel> PostAsync<T>(string RequestUri, T Request)
+        public async Task<string> PostAsync<T>(string RequestUri, T Request)
         {
             return await _accountRepo.PostAsync<T>(RequestUri, Request);
         }
@@ -32,7 +32,7 @@ namespace aggreYaMVC.Services
         {
             return await _accountRepo.DeleteAsync<T>(RequestUri, Token);
         }
-        public async Task<ResponseModel> GetAsync<T>(string RequestUri, string Token)
+        public async Task<string> GetAsync<T>(string RequestUri, string Token)
 
         {
             return await _accountRepo.GetAsync<T>(RequestUri, Token);

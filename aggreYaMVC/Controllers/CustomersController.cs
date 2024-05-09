@@ -1,13 +1,18 @@
 ﻿using aggreYaMVC.Models;
 using aggreYaMVC.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using static aggreYaMVC.Controllers.AccountController;
 
 namespace aggreYaMVC.Controllers
 {
+    [Authorize(Roles = "HR")]
     public class CustomersController : Controller
     {
 
@@ -27,15 +32,17 @@ namespace aggreYaMVC.Controllers
         public List<Customer> CustomerList { set; get; }
 
 
-       
 
+   
         // GET: CustomersController
         public async Task<ActionResult> Index()
         {
             try
             {
-                var result = await _accountServices.GetAsync<Customer>(_configuration["AccountEndPoint:GetAllUser"], "").ConfigureAwait(false);
-                CustomerList = result.Results;
+               var  token = HttpContext.Session.GetString("JwtToken");
+                var result = await _accountServices.GetAsync<Customer>(_configuration["AccountEndPoint:GetAllUser"], token).ConfigureAwait(false);
+                var data = JsonConvert.DeserializeObject<GetUserResponseModel>(result);
+                CustomerList = data.Results;
             }
             catch (Exception ex)
             {
@@ -59,8 +66,10 @@ namespace aggreYaMVC.Controllers
 
                 if (id != 0 && id != null)
                 {
-                     response = await _accountServices.GetAsync<Customer>(_configuration["AccountEndPoint:GetUser"] + "/" + id, "");
-                    customer = response.Results;
+                    var token = HttpContext.Session.GetString("JwtToken");
+                    var result = await _accountServices.GetAsync<Customer>(_configuration["AccountEndPoint:GetUser"] + "/" + id, token);
+                    var data = JsonConvert.DeserializeObject<GetUserByIDResponseModel>(result);
+                    customer = data.Results;
                 }
 
             }            
@@ -75,15 +84,15 @@ namespace aggreYaMVC.Controllers
         {
             try
             {
-
+                var token = HttpContext.Session.GetString("JwtToken");
                 if (customer.Id != 0 && customer?.Id != null)
-                {
-                    var result =await  _accountServices.UpdateAsync<Customer>(_configuration["AccountEndPoint:UpdateUser"]+"/"+ customer.Id, customer, "");
+                { 
+                var result =await  _accountServices.UpdateAsync<Customer>(_configuration["AccountEndPoint:UpdateUser"]+"/"+ customer.Id, customer, token);
                 }
                 else
                 {
 
-                    var result =await  _accountServices.PostAsync<Customer>(_configuration["AccountEndPoint:AddUser"], customer, "");
+                    var result =await  _accountServices.PostAsync<Customer>(_configuration["AccountEndPoint:AddUser"], customer, token);
                 }
             }
             catch (Exception ex)
@@ -104,10 +113,11 @@ namespace aggreYaMVC.Controllers
         {
             try
             {
+                var token = HttpContext.Session.GetString("JwtToken");
                 if (id != 0)
                 {
                     string message = "SUCCESS";
-                    var result = await _accountServices.DeleteAsync<Customer>(_configuration["AccountEndPoint:DeleteUser"]+"/"+id, "");
+                    var result = await _accountServices.DeleteAsync<Customer>(_configuration["AccountEndPoint:DeleteUser"]+"/"+id, token);
                     
                     
                 }

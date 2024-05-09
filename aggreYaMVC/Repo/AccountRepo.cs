@@ -1,7 +1,9 @@
 ﻿using aggreYaMVC.Models;
 using Newtonsoft.Json;
+using NuGet.Common;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -21,7 +23,7 @@ namespace aggreYaMVC.Repo
             _logger = logger;
         }
 
-        public async Task<ResponseModel> PostAsync<T>(string RequestUri, T Request)
+        public async Task<string> PostAsync<T>(string RequestUri, T Request)
         {
 
             HttpResponseMessage response = new HttpResponseMessage();
@@ -39,11 +41,11 @@ namespace aggreYaMVC.Repo
 
             
             var stream = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var result  =  JsonConvert.DeserializeObject<ResponseModel>(stream);
+            
 
             if (response.IsSuccessStatusCode)
             {
-                return result;
+                return stream;
             }
 
             var streamerr = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
@@ -65,8 +67,7 @@ namespace aggreYaMVC.Repo
             string Reqcontent = System.Text.Json.JsonSerializer.Serialize(Request);
 
             _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", Token);
-
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
             var _content = new StringContent(Reqcontent, Encoding.UTF8, "application/json");
             /*_content.Headers.TryAddWithoutValidation("user_id",userid);*/
 
@@ -101,7 +102,8 @@ namespace aggreYaMVC.Repo
             string Reqcontent = System.Text.Json.JsonSerializer.Serialize(Request);
 
             _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", Token);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
+
 
             var _content = new StringContent(Reqcontent, Encoding.UTF8, "application/json");
             /*_content.Headers.TryAddWithoutValidation("user_id",userid);*/
@@ -137,9 +139,10 @@ namespace aggreYaMVC.Repo
           //  string Reqcontent = System.Text.Json.JsonSerializer.Serialize(Request);
 
             _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", Token);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
 
-           // var _content = new StringContent(Reqcontent, Encoding.UTF8, "application/json");
+
+            // var _content = new StringContent(Reqcontent, Encoding.UTF8, "application/json");
             /*_content.Headers.TryAddWithoutValidation("user_id",userid);*/
 
 
@@ -165,17 +168,17 @@ namespace aggreYaMVC.Repo
 
             throw apiException;
         }
-        public async Task<ResponseModel> GetAsync<T>(string RequestUri, string Token)
+        public async Task<string> GetAsync<T>(string RequestUri, string Token)
         {
 
             HttpResponseMessage response = new HttpResponseMessage();
 
-           // string Reqcontent = System.Text.Json.JsonSerializer.Serialize(Request);
+            // string Reqcontent = System.Text.Json.JsonSerializer.Serialize(Request);
 
             _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", Token);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
 
-           // var _content = new StringContent(Reqcontent, Encoding.UTF8, "application/json");
+            // var _content = new StringContent(Reqcontent, Encoding.UTF8, "application/json");
             /*_content.Headers.TryAddWithoutValidation("user_id",userid);*/
 
 
@@ -183,11 +186,11 @@ namespace aggreYaMVC.Repo
 
 
             var stream = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var result = JsonConvert.DeserializeObject<ResponseModel>(stream);
+            //var result = JsonConvert.DeserializeObject<ResponseModel>(stream);
 
             if (response.IsSuccessStatusCode)
             {
-                return result;
+                return stream;
             }
 
             var streamerr = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);

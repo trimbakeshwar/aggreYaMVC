@@ -1,8 +1,18 @@
 ﻿using aggreYaMVC.Models;
 using aggreYaMVC.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Win32;
+using NuGet.Common;
 using System.Diagnostics;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using Newtonsoft.Json;
+using System.IO;
+
 
 namespace aggreYaMVC.Controllers
 {
@@ -48,7 +58,8 @@ namespace aggreYaMVC.Controllers
                     request.registration = Register;
                     request.role = role;
                     var result = await _accountServices.PostAsync<RegisterViewModel>(_configuration["AccountEndPoint:Register"], request);
-                    if (result.IsSuccess)
+                    ResponseModel Response = JsonConvert.DeserializeObject<ResponseModel>(result);
+                    if (Response.IsSuccess)
                     {
                         return View("Login");
 
@@ -73,7 +84,7 @@ namespace aggreYaMVC.Controllers
         [HttpPost("Account/Login")]
         public async Task<IActionResult> Verify(LoginModel LoginRequest, string ReturnUrl)
         {
-            ResponseModel Response = new ResponseModel();
+            LoginResponseModel Response = new LoginResponseModel();
             try
             {
 
@@ -81,29 +92,34 @@ namespace aggreYaMVC.Controllers
                 {
                     return View("Login");
                 }
+               
                 string message = "LOGIN SUCCESS";
-                Response = await _accountServices.PostAsync<LoginModel>(_configuration["AccountEndPoint:Login"], LoginRequest);
+                string result = await _accountServices.PostAsync<LoginModel>(_configuration["AccountEndPoint:Login"], LoginRequest);
+                 Response = JsonConvert.DeserializeObject<LoginResponseModel>(result);
                 if (Response.IsSuccess)
                 {
-                    /*var token = _accountServices.GenerateToken(Register.Email);
-                    ClaimsPrincipal claimsPrincipal = _accountServices.Validating(token);
+                    var tokenHandler = new JwtSecurityTokenHandler();
+
+                    var validationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidAudience = _configuration["JWT:ValidAudience"],
+                        ValidIssuer = _configuration["JWT:ValidIssuer"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]))
+
+                    };
+                    HttpContext.Session.SetString("JwtToken", Response.Results.token);
+
+                    ClaimsPrincipal claimsPrincipal = GetClaimPrinciple(Response.Results.token);
                     HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
                     {
                         AllowRefresh = true,
-                        ExpiresUtc = DateTime.UtcNow.AddMinutes(1)
-                    });*/
-                    // this.repoisitory.GenerateToken(Register.Email);
-                    //GenerateTicket(Register.Email, ReturnUrl);
-                    /*List<Claim> claims = new List<Claim>();
-                    claims.Add(new Claim(ClaimTypes.NameIdentifier, Register.Email));
-                    claims.Add(new Claim(ClaimTypes.Name, Register.Email));
-                    ClaimsIdentity claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                    ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-*/
-
-                    return Redirect("Customer/Index");
-                    // return View(new { Status = true, Message = "Login Sucessfully", Data = result, token });
+                        ExpiresUtc = Response.Results.expiration
+                    });
+                    return Redirect("~/Customers/Index");
                 }
                 Message = "Login Fail";
                 return View("Login");
@@ -114,8 +130,36 @@ namespace aggreYaMVC.Controllers
                 return View("Login");
             }
         }
+        [NonAction]
+        public ClaimsPrincipal GetClaimPrinciple(string token)
+        {
+            ClaimsPrincipal principal = new ClaimsPrincipal();
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidAudience = _configuration["JWT:ValidAudience"],
+                    ValidIssuer = _configuration["JWT:ValidIssuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]))
 
+                };
 
+                 principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
+
+               
+            }
+            catch (Exception ex)
+            {
+               
+
+            }
+            return principal;
+        }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
